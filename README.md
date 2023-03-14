@@ -18,7 +18,7 @@ This library enables apps to use multiple keycloak realms using email domains fo
 ```
 npm install -i sveltkit-keycloak-multitenant
 ```
-# Setup
+# Setup Summary
 
 1. Setup .ENV variables
 2. add userinfo definition in app.d.ts locals
@@ -28,7 +28,7 @@ npm install -i sveltkit-keycloak-multitenant
 6. Setup Keycloak
 7. Update tenants.yaml with the tenants and clients setup in the last step
 
-# Setup Walkthrough
+# Setup
 
 ## 1. Setup .ENV variables[1. Setup .ENV variables]
 
@@ -39,7 +39,7 @@ npm install -i sveltkit-keycloak-multitenant
 | LOGOUT_PATH   | path where you want to redirect to post logout.  Must be an SSR page. (route has a +page.server.ts/js file) | /auth/logout |
 | TENANT_YAML   | Absolute path to where tenant YAML file is.  (So it can be injected as a container dependency.)    | (some absolute path) |
 
-[## 2. add userinfo definition in app.d.ts locals](## 2. add userinfo definition in app.d.ts locals)
+## 2. add userinfo definition in app.d.ts locals
 User info is stored in locals by hooks.server.ts.
 
 ```
@@ -173,7 +173,7 @@ camaros:
   email_domain: 'camaros.io'
 ```
 
-Note you can extend this however you want, add a customer logo attribute or whatever.  Anything in this will be available in the locals.
+Optional: Extend this with any additional attributes to pass into locals.
 
 ```
 mustangs:
@@ -185,7 +185,7 @@ mustangs:
   default_locale: 'en-US'
 ```
 
-If you add custom tenant attributes, extend the UserInfo type in app.d.ts so you have type support in your +layout.svelte/+page.svelte files:
+Note: If you want type support for those attributes in +layout.svelte/+page.svelte, you can extend the definition in app.d.ts:
 ```
 import type { UserInfo } from '$lib/server/keycloakservice';
 
