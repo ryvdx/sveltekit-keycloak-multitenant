@@ -3,11 +3,11 @@ For adding multi-tenant authentication and authorization in SvelteKit apps using
 
 
 # Motivation
-Wanted to find a cost effective and solution for multitenant authentication for SvelteKit.  Most hosted solutions and online examples I found really targeted single-tenancy, and social logins.  Integrating 
+Wanted to find a cost effective solution for multitenant authentication in SvelteKit apps.  Most solutions and online examples are built for single-tenancy, or quickly expanding on authentication providers and social logins.  (B2C apps)
 
-Keycloak is multitenant out of the box, and let you handle a myriad of customizable authentication requirements per customer as part of an onboarding process. (Anything from we provide auth to customer bring-your-own-identity-provider, 2-factor Auth for options, support tokens and event dongles or face/fingerprint recognition, different password rules for others still.)
+Keycloak is multitenant out of the box, open source, easy to containerize and put behind a reverse proxy, and supports a diverse capaility set for authentication configuration. (Anything from we provide auth to customer bring-your-own-identity-provider, 2-factor Auth for options, support tokens and event dongles or face/fingerprint recognition, different password rules for others still.)  I wanted the extensibility that Keycloak provided, but solutions/examples online integrating keycloak with sveltekit were implemented as single tenant. (i.e. one realm and one client adapter supported.)
 
-Most all of the authentication solutions I found that supported keycloak were implemented as single tenant.  (i.e. only one realm and one client adapter supported.) This implementation specifically enables the use of Keycloak's multitenancy for B2B apps.
+This library specifically enables apps to use multiple keycloak realms using email domains for federated authentication services. (B2B apps)
 
 1. Each customer has fully configurable authentication per their enterprise reqiurements.
     (i.e. bring-your-own-identity-provider, 2-factor Auth for others, different authentication rules for every customer)
@@ -20,14 +20,13 @@ npm install -i sveltkit-keycloak-multitenant
 ```
 # Setup
 
-1. Setup .ENV variables
-2. add userinfo definition in app.d.ts locals
-3. Add handler to hooks.server.ts file
-4. Make a basic login form
-5. Integrate the navigation and logout into layout.server.ts
-6. Setup Keycloak
-7. Update tenants.yaml with the tenants and clients setup in the last step
-
+## 1. Setup .ENV variables
+## 2. add userinfo definition in app.d.ts locals
+## 3. Add handler to hooks.server.ts file
+## 4. Make a basic login form
+## 5. Integrate the navigation and logout into layout.server.ts
+## 6. Setup Keycloak
+## 7. Update tenants.yaml with the tenants and clients setup in the last step
 
 ## 1. Setup .ENV variables
 
@@ -38,7 +37,7 @@ npm install -i sveltkit-keycloak-multitenant
 | LOGOUT_PATH   | path where you want to redirect to post logout.  Must be an SSR page. (route has a +page.server.ts/js file) | /auth/logout |
 | TENANT_YAML   | Absolute path to where tenant YAML file is.  (So it can be injected as a container dependency.)    | (some absolute path) |
 
-## 2. add userinfo definition in app.d.ts locals 
+[## 2. add userinfo definition in app.d.ts locals](## 2. add userinfo definition in app.d.ts locals)
 User info is stored in locals by hooks.server.ts.
 
 ```
