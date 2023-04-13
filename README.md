@@ -1,6 +1,6 @@
 # sveltekit-keycloak-multitenant
 For adding multi-tenant authentication and authorization in SvelteKit apps using KeyCloak.
-
+Uses a Hybrid Authentication flow and JWT tokens.
 
 # Motivation
 Wanted to find a cost effective solution for multitenant authentication in SvelteKit apps.  Most solutions and online examples are built for single-tenancy, or quickly expanding on authentication providers and social logins.  (B2C apps)
@@ -14,6 +14,14 @@ This library enables apps to use multiple keycloak realms using email domains fo
 2. Roles and Role-based-access-controls configuration done entirely in Keycloak, simplify complexity of managing multitenancy within your app.
 3. Easy to add new tenants at run-time.
 
+Some added benefits of this library:
+- Single implementation in hooks.server.ts handles all routes and general API calls from client to server transparently
+- No access tokens or any sensitive paramters like keycloak client codes ever sent to browser.  Refresh token is benign but carries all the payload needed for the backend to refresh the session timeout and pull updated roles.
+- No need to manage sessions in the sveltekit app because of JWT.  (Sessions managed by Keycloak.  JWT validataion managed by Keycloak.)
+- only HTTP-only strict domain cookies used.
+- CSRF concerns in authentication addressed
+- ability to retain sveltekitapp-to-keycloakserver communications within private network (within a docker/kubernetes network)
+
 # Install
 ```
 npm install -i sveltkit-keycloak-multitenant
@@ -24,6 +32,7 @@ npm install -i sveltkit-keycloak-multitenant
 2. add userinfo definition in app.d.ts locals
 3. Add handler to hooks.server.ts file
 4. Make a basic login form
+5. Make a Logout route with SSR 
 5. Integrate the navigation and logout into layout.server.ts
 6. Setup Keycloak
 7. Update tenants.yaml with the tenants and clients setup in the last step
@@ -104,7 +113,12 @@ Form requires:
 
 ```
 
-## 5. Integrate the navigation and logout into layout.server.ts
+## 5. Make a Logout route with SSR
+Implement a route for whatever LOGOUT_PATH is going to be set to.  When a logout button/link will be clicked, KeyCloakHandle will do a response redirect to that.
+This route must have +page.svelte and +page.server.ts file in order to force a server-side after logout.  It does not matter what you want to put on the logout page beyond having those files present.  This is required so that a SSR call will clear the locals, which layout.svelte then hides unauthenticated routes.  It will also ensure the refresh cookie is expired on page render in the browser before they do anything else.
+
+
+## 6. Integrate the navigation and logout into layout.server.ts
 
 Pass through locals variables out as page data in +layout.server.ts.
 (Note, for pages that hide/show features within the page by role, you can pass the UserInfo object to the page renderer in that pages load method as well.)
@@ -151,10 +165,10 @@ Example +layout.svelte file.  (You can do anything with the UserInfo metadata re
 </style>
 ```
 
-## 6. Setup Keycloak
+## 7. Setup Keycloak
 
 
-## 7. Update tenants.yaml with the tenants and clients setup in the last step
+## 8. Update tenants.yaml with the tenants and clients setup in the last step
 Structure your metadata as follows... the key in the first level is the assumed "tenant name".
 (Might do this different in the future an leverage a service account in the master realm to get all this,
 for now this is simple enough.  Easy enough to update the dependency in a container in Kubernetes or Docker.

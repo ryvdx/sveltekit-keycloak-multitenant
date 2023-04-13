@@ -1,0 +1,54 @@
+{
+	"name": "sveltekit-keyloack-multitenant",
+	"version": "0.1.0",
+    "description": "Multi-tenant authentication and authorization in SvelteKit apps using KeyCloak.",
+	"private": false,
+    "author": "Mark Sawczuk",
+    "license": "MIT",
+    "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ryvdx/sveltekit-keycloak-multitenant"
+    },
+    "keywords": ["sveltekit","keycloak","authentication","multitenant","jwt","oauth","oidc"],
+	"scripts": {
+		"dev": "svelte-package -w",
+        "build": "pnpm clean && pnpm check && svelte-package && node ./scripts/postbuild.js && rm -rf package",
+		"preview": "vite preview",
+		"test": "vitest",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:unit": "vitest",
+		"lint": "prettier --plugin-search-dir . --check . && eslint .",
+		"format": "prettier --plugin-search-dir . --write .",
+		"publish": "./publish.sh"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "^1.1.7",
+		"@sveltejs/adapter-static": "^1.0.0-next.50",
+		"@sveltejs/kit": "^1.5.0",
+		"@types/js-yaml": "^4.0.5",
+		"@types/jsonwebtoken": "^9.0.1",
+		"@typescript-eslint/eslint-plugin": "^5.45.0",
+		"@typescript-eslint/parser": "^5.45.0",
+		"eslint": "^8.28.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-svelte3": "^4.0.0",
+		"prettier": "^2.8.0",
+		"prettier-plugin-svelte": "^2.8.1",
+		"svelte": "^3.54.0",
+		"svelte-check": "^3.0.1",
+		"tslib": "^2.4.1",
+		"typescript": "^4.9.3",
+		"vite": "^4.0.0",
+		"vitest": "^0.25.3"
+	},
+    "peerDependencies": {
+        "@sveltejs/kit": "^1.5.0"
+      },
+	"dependencies": {
+		"crypto-random-string": "^5.0.0",
+		"jsonwebtoken": "^9.0.0",
+		"yaml": "^2.2.1"
+	}
+}
