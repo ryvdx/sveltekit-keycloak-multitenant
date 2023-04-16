@@ -1,34 +1,36 @@
 # sveltekit-keycloak-multitenant
 
-For adding multi-tenant authentication and authorization in SvelteKit apps using KeyCloak.
+Multi-tenant authentication and authorization in SvelteKit apps using KeyCloak.
+Intended for apps that need fully federated authentication for typically B2B apps serving enterprise customers with varying authentication requirements.
 Uses a Hybrid Authentication flow and JWT tokens.
+Provides enables role-based-access-controls using Keycloak role managemewnt for SvelteKit apps to leverage.
 
 # Motivation
 
-Wanted to find a cost effective solution for multitenant authentication in SvelteKit apps. Most solutions and online examples are built for single-tenancy, or quickly expanding on authentication providers and social logins. (B2C apps)
+Wanted to find a cost effective solution for multitenant authentication in SvelteKit apps. Most popular solutions are built for single-tenancy, or quickly expanding on authentication providers and social logins. (B2C applicataions, but not B2B.)
 
-Keycloak is multitenant out of the box, open source, easy to containerize and put behind a reverse proxy, and supports a diverse capaility set for authentication configuration. (i.e. bring-your-own-identity-provider, 2-factor Auth, escoteric authentication methods like keycards or face/fingerprint recognition, different password rules for others still.) I wanted the extensibility that Keycloak provided, but solutions/examples online I found where implemented as single tenant. (i.e. one realm and one client adapter supported.)
+Keycloak is a great open source solution for fully federated authentication and autorization and is easy to run in a containerized enviroment.
+Other examples online using Keycloalk and SvelteKit are built for single-tenant.  (i.e. othe app bound to a singular specific realm.)
 
 This library enables apps to use multiple keycloak realms using email domains for federated authentication services. (B2B apps)
 
 1. Each customer has fully configurable authentication per their enterprise reqiurements.
    (i.e. bring-your-own-identity-provider, 2-factor Auth for others, different authentication rules for every customer)
 2. Roles and Role-based-access-controls configuration done entirely in Keycloak, simplify complexity of managing multitenancy within your app.
-3. Easy to add new tenants at run-time.
+3. Easy to add new tenants at run-time using a simple externally loaded dependancy. (Yaml file that maps email domains to realms.)
 
 Some added benefits of this library:
 
 - Single implementation in hooks.server.ts handles all routes and general API calls from client to server transparently
-- No access tokens or any sensitive paramters like keycloak client codes ever sent to browser. Refresh token is benign but carries all the payload needed for the backend to refresh the session timeout and pull updated roles.
-- No need to manage sessions in the sveltekit app because of JWT. (Sessions managed by Keycloak. JWT validataion managed by Keycloak.)
+- No access tokens or any sensitive paramters like keycloak client codes ever sent to browser. Refresh token carries the payload needed for the backend to extend the session.
 - only HTTP-only strict domain cookies used.
 - CSRF concerns in authentication addressed
-- ability to retain sveltekitapp-to-keycloakserver communications within private network (within a docker/kubernetes network)
+- ability to retain communication between  sveltekit app and keycloak within private network
 
 # Install
 
 ```
-npm install -i sveltkit-keycloak-multitenant
+npm install -S sveltkit-keycloak-multitenant
 ```
 
 # Setup Summary
@@ -42,7 +44,7 @@ npm install -i sveltkit-keycloak-multitenant
 7. Setup Keycloak
 8. Update tenants.yaml with the tenants and clients setup in the last step
 
-# Setup
+# Setup Explained
 
 ## 1. Setup .ENV variables[1. Setup .ENV variables]
 
