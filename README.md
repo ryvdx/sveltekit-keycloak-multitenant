@@ -1,18 +1,19 @@
 # sveltekit-keycloak-multitenant
 
-Multi-tenant authentication and authorization in SvelteKit apps using KeyCloak.
+Multi-tenant (fully federated) authentication and authorization in SvelteKit apps using KeyCloak.
 Intended for apps that need fully federated authentication for typically B2B apps serving enterprise customers with varying authentication requirements.
 Uses a Hybrid Authentication flow and JWT tokens.
 Provides enables role-based-access-controls using Keycloak role managemewnt for SvelteKit apps to leverage.
 
 # Motivation
 
-Wanted to find a cost effective solution for multitenant authentication in SvelteKit apps. Most popular solutions are built for single-tenancy, or quickly expanding on authentication providers and social logins. (B2C applicataions, but not B2B.)
+Wanted a cost effective solution for multitenant authentication in SvelteKit apps intended to run in a containerized environment.
 
-Keycloak is a great open source solution for fully federated authentication and autorization and is easy to run in a containerized enviroment.
-Other examples online using Keycloalk and SvelteKit are built for single-tenant.  (i.e. othe app bound to a singular specific realm.)
+Most solutions are built for single-tenancy, or quickly expanding on authentication providers and social logins. (B2C applicataions.)
 
-This library enables apps to use multiple keycloak realms using email domains for federated authentication services. (B2B apps)
+Keycloak is a great open source solution enabling fully federated authentication.  But, most examples online using Keycloak and Sveltekit are implemented as single-tenant.
+
+This library enables apps to use multiple keycloak realms mapping customer user email domains to realms for federated authentication services. (B2B apps)
 
 1. Each customer has fully configurable authentication per their enterprise reqiurements.
    (i.e. bring-your-own-identity-provider, 2-factor Auth for others, different authentication rules for every customer)
@@ -22,10 +23,10 @@ This library enables apps to use multiple keycloak realms using email domains fo
 Some added benefits of this library:
 
 - Single implementation in hooks.server.ts handles all routes and general API calls from client to server transparently
-- No access tokens or any sensitive paramters like keycloak client codes ever sent to browser. Refresh token carries the payload needed for the backend to extend the session.
+- Low-client trust: No access tokens or any sensitive paramters like keycloak client codes ever sent to browser.  Refresh token is only thing shared with client.
 - only HTTP-only strict domain cookies used.
 - CSRF concerns in authentication addressed
-- ability to retain communication between  sveltekit app and keycloak within private network
+- ability to retain communication between sveltekit app and keycloak within private network.  (authentication done externally, but access token exchange, token refresh, and session logout done with different URL keeping that communication within private network of your infrastructure.)
 
 # Install
 
@@ -48,16 +49,16 @@ npm install -S sveltkit-keycloak-multitenant
 
 ## 1. Setup .ENV variables[1. Setup .ENV variables]
 
-| Variable     | Purpose                                                                                                    | Example (Default)     |
-| ------------ | ---------------------------------------------------------------------------------------------------------- | --------------------- |
-| KEYCLOAK_URL | URL of your Keycloak server taking OIDC calls.                                                             | http://localhost:8085 |
-| LOGIN_PATH   | Where the login form will be and unauthenticated users will automatically be redirected to.                | /auth/login           |
-| LOGOUT_PATH  | path where you want to redirect to post logout. Must be an SSR page. (route has a +page.server.ts/js file) | /auth/logout          |
-| TENANT_YAML  | Absolute path to where tenant YAML file is. (So it can be injected as a container dependency.)             | (some absolute path)  |
+| Variable              | Purpose                                                                                                  | Example (Default)     |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | --------------------- |
+| KEYCLOAK_URL          | URL of your Keycloak server taking OIDC authentication calls.                                            | https://auth.mayapp   |
+| KEYCLOAK_INTERNAL_URL | Intenal URL of your Keycloak server within containerized network.                                        | http://keycloak:8085  |
+| LOGIN_PATH            | Relative path to user email form pre-login.                                                              | /auth/login           |
+| LOGOUT_PATH           | path where you want to redirect to post logout. (Route must have a server side +page.server.ts/js file)  | /auth/logout          |
 
 ## 2. add userinfo definition in app.d.ts locals
 
-User info is stored in locals by hooks.server.ts.
+User info and user roles is stored in locals by hooks.server.ts.
 
 ```
 // See https://kit.svelte.dev/docs/types#app
