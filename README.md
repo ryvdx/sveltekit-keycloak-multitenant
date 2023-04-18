@@ -55,6 +55,7 @@ npm install -S sveltkit-keycloak-multitenant
 | KEYCLOAK_INTERNAL_URL | Intenal URL of your Keycloak server within containerized network.                                        | http://keycloak:8085  |
 | LOGIN_PATH            | Relative path to user email form pre-login.                                                              | /auth/login           |
 | LOGOUT_PATH           | path where you want to redirect to post logout. (Route must have a server side +page.server.ts/js file)  | /auth/logout          |
+| POST_LOGIN_PATH       | (Optional) post authentication redirect if initial landing was not a deep link. (default / if not set)   | /homepage             |
 
 ## 2. add userinfo definition in app.d.ts locals
 

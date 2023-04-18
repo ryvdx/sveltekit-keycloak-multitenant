@@ -12,6 +12,7 @@ interface KeyCloakHandleOptions {
     keycloakInternalUrl: string;
     loginPath: string;
     logoutPath: string;
+    postLoginPath?: string;
 }
 declare const KeyCloakHandle: (config: KeyCloakHandleOptions) => Handle;
 export { KeyCloakHandle, emailValidator, type UserInfo };
