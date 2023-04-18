@@ -1,12 +1,8 @@
-// import { KEYCLOAK_URL, KEYCLOAK_INTERNAL_URL, LOGIN_PATH, LOGOUT_PATH } from '$env/static/private'
 import { redirect, type Handle, type RequestEvent } from "@sveltejs/kit";
 import jwt from 'jsonwebtoken';
-// import cryptoRandomString from "crypto-random-string";
 import fs from 'fs';
 import YAML from 'yaml';
 import path from 'path';
-
-console.debug('keycloakservice instantiated');
 
 let KEYCLOAK_URL:string;
 let KEYCLOAK_INTERNAL_URL:string;
@@ -36,10 +32,7 @@ interface AllTenants {
 let tenants: AllTenants = {};
 const initTenantLookup = () => {
   
-  const pwd = process.env.PWD;
-  if (!pwd) {
-      throw new Error('process.env.PWD is not set');
-  }
+  const pwd = process.env.PWD || process.cwd();
   const tenant_path = path.resolve(pwd, 'tenants.yaml');
 
   if (!fs.existsSync(tenant_path)) {
@@ -121,18 +114,6 @@ interface RefreshTokenType {
   sid: string;
 }
 
-interface KeyCloakHelperInterface {
-  getToken(tenantMeta: TenantMeta, username:string, password:string): Promise<OpenIdResponse>;
-  login(tenantMeta: TenantMeta, username:string, password:string): Promise<OpenIdResponse>;
-  logout(tenantMeta: TenantMeta, refreshCookie:string): Promise<boolean>;
-  refresh(tenantMeta: TenantMeta, refreshCookie:string | undefined): Promise<OpenIdResponse>;
-  convertParmsForBody(parms:object): string;
-  getLoginForwardUrl(tenantMeta: TenantMeta, csrfCode: string, redirectUri:string, email?: string): string;
-  exchangeOneTimeCodeForAccessToken(tenantMeta: TenantMeta, code: string, event: RequestEvent): Promise<OpenIdResponse>;
-  getByTenantName(tenantName: string | undefined): TenantMeta ;
-  getTenantByEmail(email: string): TenantMeta;
-}
-
 const emailValidator = (email: string): boolean => {
   // Credit to https://www.npmjs.com/package/email-validator
   const tester = /^[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~](\.?[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
@@ -151,7 +132,7 @@ const emailValidator = (email: string): boolean => {
   return true;
 };
 
-const KeyCloakHelper: KeyCloakHelperInterface = {
+const KeyCloakHelper = {
 
   getToken : async (tenantMeta: TenantMeta, username:string, password:string): Promise<OpenIdResponse> => {
 
@@ -257,7 +238,7 @@ const KeyCloakHelper: KeyCloakHelperInterface = {
   refresh : async(tenantMeta: TenantMeta, refreshCookie: string | undefined): Promise<OpenIdResponse> => {
     if (!refreshCookie) {
         throw new Error('No Refresh Token Found');
-    }
+    } 
       
     const postParms = {
         client_id: tenantMeta.client_id,
@@ -279,7 +260,7 @@ const KeyCloakHelper: KeyCloakHelperInterface = {
     }
     catch (err) {
       console.error(`Token Refresh Failed: ${err}}`);
-        throw err;
+      throw err;
     }
   },
 
@@ -367,13 +348,12 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
 
   console.debug('keycloakservice handle invoked');
   console.debug(`event.url: ${event.url}`);
-  console.debug(event);
-
+  
   const refreshTokenCookie = event.cookies.get('RefreshToken');
   const loginResponse = event.url.searchParams.get('response');
 
   if (event.url.pathname === LOGIN_PATH && event.request.method === 'POST' && event.url.search === '?/login') {
-    console.debug('Login form submitted, redirect to keycloak');
+    // console.debug('resolve POST from login, redirect user to correponding keycloak realm for auth based on email domain');
     const data = await event.request.formData();
     const email = data.get('email')?.toString();
     const validEmail = !!email ? emailValidator(email) : false;
@@ -383,31 +363,24 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     }
     const csrfCode = event.cookies.get('csrfCode');
     if (!csrfCode) {
+      console.debug('Redirecting to login if no csrfCode code found');
        throw redirect(303, LOGIN_PATH);
     }
-    let loginUrl = '';
-    try {
-      const tenantMeta = KeyCloakHelper.getTenantByEmail(email);
-      const LastPath = event.cookies.get('LastPath');
-      const redirectTo = `${event.url.origin}${LastPath ?? POST_LOGIN_PATH }`;
-      loginUrl = KeyCloakHelper.getLoginForwardUrl(tenantMeta, csrfCode, redirectTo, email);
-    }
-    catch (err) {
-      console.error(`Keycloakservice login error. Client: ${event.getClientAddress()}, Error: ${err}`);
-      console.error(err);
-      throw redirect(303, LOGIN_PATH);
-    }
-    throw redirect(303, loginUrl);
+
+    const tenantMeta = KeyCloakHelper.getTenantByEmail(email);
+    const LastPath = event.cookies.get('LastPath');
+    const redirectTo = `${event.url.origin}${LastPath ?? POST_LOGIN_PATH }`;
+    const keycloackLoginUrl = KeyCloakHelper.getLoginForwardUrl(tenantMeta, csrfCode, redirectTo, email);
+    console.debug('Redirecting to keycloak');
+    throw redirect(303, keycloackLoginUrl);
+
   }
 
   // Track the landing URL for the user when the come to the site so we can redirect them back there after login
-  const pathIs = [LOGIN_PATH, `${LOGIN_PATH}/response`, LOGOUT_PATH];
   if (!refreshTokenCookie
     && !event.url.pathname.startsWith(LOGIN_PATH)
     && !event.url.pathname.startsWith(LOGOUT_PATH)
     && !loginResponse) {
-
-    console.debug('No authentication, save LastPath and redirect to login page.');
 
     // console.log('1: Storing last path in cookie');
     event.cookies.set('LastPath', event.url.pathname, {
@@ -419,27 +392,16 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     });
     
     // If we don't have a refresh token, redirect to the login page if they aren't currently there.
-    /*
-    try {
-      throw redirect(302, LOGIN_PATH);
-    }
-    catch (err) {
-      console.error(`Error redirecting to login path.`);
-      console.error(err);
-    }
-    */
-    return redirect(303, LOGIN_PATH);
+    console.debug('No refresh token, unauthenticated user, redirecting to login');
+    throw redirect(302, LOGIN_PATH);
   }
 
   // Don't execute code past this if there is no refresh token and user is on the login page
   if (!refreshTokenCookie && event.url.pathname === LOGIN_PATH && event.request.method === 'GET') {
     // If no CSRF cookie, create one for the /login/response validation
-    // console.log('2: !refreshTokenCookie && event.url.pathname === LOGIN_PATH && event.request.method === GET');
-    console.debug('No refresh token and getting login path, set CSFR cookie.');
+    // console.debug('2: !refreshTokenCookie && event.url.pathname === LOGIN_PATH && event.request.method === GET');
     const csrfCode = event.cookies.get('csrfCode');
     if (!csrfCode) {
-      // console.log('No CSRF cookie, creating one');
-      // const clientCode = cryptoRandomString({length: 16, type: 'url-safe'})
       const clientCode = Math.random().toString().substring(2, 15);
       event.cookies.set('csrfCode', clientCode, {
         httpOnly: true,
@@ -453,8 +415,8 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     return await resolve(event);
   }
     
-  if (!!loginResponse) {
-    console.debug('Login response receivedm exchange one time code to access token');
+  if (!!loginResponse && !refreshTokenCookie) {
+    // console.debug('Converting one-time access code for access token');
     const decoded = jwt.decode(loginResponse) as any;
 
     if (!decoded.iss) {
@@ -464,7 +426,7 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
  
     // Convert one-time access code for access token
     try {
-      // console.log('Converting one-time access code for access token');
+      
       const tenantName = decoded.iss.split('/realms/')[1];
       const tenantMeta = KeyCloakHelper.getByTenantName(tenantName);
       const openIdResp = await KeyCloakHelper.exchangeOneTimeCodeForAccessToken(tenantMeta, decoded.code, event);
@@ -503,19 +465,13 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
         throw redirect(302,LOGIN_PATH)
     }
 
-    // Redirect user back to their original path pre-login
-    // const LastPath = event.cookies.get('LastPath');
-    // const redirectTo = !LastPath ? POST_LOGIN_PATH : LastPath;
-    // console.log(`Redirecting user back to their original path pre-login or default: ${redirectTo}`)
-    // throw redirect(302, redirectTo)
-
-    const response = await resolve(event);
-    return response
+    // Post Authentication we resolve the redirect path
+    return await resolve(event);
  }
 
-   // Don't execute code past this if there is no refresh token and user is on the login page
+   // Don't execute code past this if there is no refresh token and user is on the logout page
    if (!refreshTokenCookie && event.url.pathname === LOGOUT_PATH) {
-    console.debug('Logout path without refresh token.');
+    // console.debug('Let logout page render');
     return await resolve(event);
   }
 
@@ -531,8 +487,9 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
    }
 
   // If we have a refresh token on normal page loads if possible
+  const pathIs = [LOGIN_PATH, LOGOUT_PATH];
   if (refreshTokenCookie && pathIs.indexOf(event.url.pathname) === -1) {
-    console.debug('Refresh token.');
+    // console.debug('Refresh token on any SSR to extend session');
     try {
       const refreshMeta = await KeyCloakHelper.refresh(tenantMeta, refreshTokenCookie);
       event.cookies.set('RefreshToken', refreshMeta.refresh_token, {
@@ -572,7 +529,7 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
       return response
     }
     catch (err) {
-        // Note: this will set the short term CSRF cookie on landing at /login when hooks.server.ts is invoked again
+        // console.debug('Error refreshing token will time out all cookies and redirect user to login')
         expireAuthCookies(event);
         event.locals.user = null;
         throw redirect(302, LOGIN_PATH);
@@ -580,7 +537,7 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
   }
 
   if (refreshTokenCookie && event.url.pathname === LOGOUT_PATH) {
-    console.debug('logout user.');
+    // console.debug('Terminate session on logout route response, expire cookies, clear locals.');
     try {
         await KeyCloakHelper.logout(tenantMeta, refreshTokenCookie);
     }
@@ -592,7 +549,6 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     event.locals.user = null;
 
     // Reset the CSRF cookie to a new value in case the user wants to log back in
-    // const clientCode = cryptoRandomString({length: 16, type: 'url-safe'})
     const clientCode = Math.random().toString().substring(2, 15);
     event.cookies.set('csrfCode', clientCode, {
       httpOnly: true,
@@ -606,7 +562,7 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     throw redirect(302, LOGOUT_PATH);
   }
 
-  console.debug('Fell through logic, resolving path. (will be a logged in route)');
+  // console.debug('Resolving event for logged in route.');
   return await resolve(event);
 }
 

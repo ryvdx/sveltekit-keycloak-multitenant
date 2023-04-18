@@ -1,6 +1,6 @@
 {
   "name": "sveltekit-keyloak-multitenant",
-  "version": "0.1.25",
+  "version": "0.1.31",
   "description": "Multi-tenant authentication and authorization for SvelteKit apps using KeyCloak.",
   "private": false,
   "author": "Mark Sawczuk",
@@ -9,7 +9,10 @@
   "module": "./lib/bundle.mjs",
   "types": "./lib/keycloakservice.d.ts",
   "exports": {
-    ".": "./lib/bundle.js"
+    ".": {
+      "import": "./lib/bundle.mjs",
+      "require": "./lib/bundle.js"
+    }
   },
   "repository": {
     "type": "git",
@@ -31,32 +34,20 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-node-resolve": "^15.0.2",
+    "@rollup/plugin-terser": "^0.4.1",
     "@rollup/plugin-typescript": "^11.1.0",
-    "@sveltejs/adapter-node": "^1.1.7",
-    "@sveltejs/adapter-static": "^1.0.0-next.50",
-    "@sveltejs/kit": "^1.15.7",
     "@tsconfig/svelte": "^4.0.1",
-    "@types/js-yaml": "^4.0.5",
     "@types/jsonwebtoken": "^9.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.45.0",
-    "@typescript-eslint/parser": "^5.45.0",
-    "eslint": "^8.28.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-svelte3": "^4.0.0",
-    "prettier": "^2.8.0",
-    "prettier-plugin-svelte": "^2.8.1",
     "rollup": "^3.20.2",
-    "rollup-plugin-polyfill-node": "^0.12.0",
+    "rollup-plugin-gzip": "^3.1.0",
     "rollup-plugin-svelte": "^7.1.4",
     "svelte": "^3.54.0",
     "svelte-check": "^3.0.1",
-    "tslib": "^2.4.1",
-    "typescript": "^5.0.4",
-    "vite": "^4.0.0",
-    "vitest": "^0.25.3"
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "@sveltejs/kit": "^1.5.0"
+    "@sveltejs/kit": "^1.15.7"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.0",

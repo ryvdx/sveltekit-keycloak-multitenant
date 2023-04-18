@@ -1,6 +1,7 @@
 { "extends": "@tsconfig/svelte",
     "compilerOptions": {
         "outDir": "./lib",
+        "rootDir": "./src",
         "declaration": true,
         "paths": {
             "resolve.exports": ["./lib/keycloakservice.d.ts"]

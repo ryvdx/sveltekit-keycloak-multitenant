@@ -1,8 +1,8 @@
-import resolve from "@rollup/plugin-node-resolve";
+// import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import pkg from "./package.json" assert {type: 'json'};
-import svelte from "rollup-plugin-svelte";
+import terser from '@rollup/plugin-terser';
 
 export default [
 
@@ -14,12 +14,13 @@ export default [
   // `file` and `format` for each target)
   {
     input: "src/keycloakservice.ts",
-    external: [],
+    // external: [],
     plugins: [
-        svelte({ emitCss: false }),
-        resolve(),
+        // svelte({ emitCss: false }),
+        // resolve(),
         commonjs(),
         typescript(), // so Rollup can convert TypeScript to JavaScript
+        terser()
     ],
     output: [
       { file: pkg.main, format: "cjs" },

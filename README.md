@@ -1,4 +1,5 @@
-# sveltekit-keycloak-multitenant
+# sveltekit-keycloak-multitenant (BETA)
+(still troubleshooting this...)
 
 Multi-tenant (fully federated) authentication and authorization in SvelteKit apps using KeyCloak.
 Intended for apps that need fully federated authentication for typically B2B apps serving enterprise customers with varying authentication requirements.
