@@ -80,7 +80,8 @@ typings/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+#dist
+build
 
 # Gatsby files
 .cache/
@@ -105,3 +106,6 @@ dist
 
 # Temp backups while iterating over things
 /ignore
+
+
+/.svelte-kit

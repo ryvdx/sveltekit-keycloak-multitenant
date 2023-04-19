@@ -392,7 +392,7 @@ const kcHandle:Handle =  async ({ event, resolve }) => {
     });
     
     // If we don't have a refresh token, redirect to the login page if they aren't currently there.
-    console.debug('No refresh token, unauthenticated user, redirecting to login');
+    console.log('No refresh token, unauthenticated user, redirecting to login');
     throw redirect(302, LOGIN_PATH);
   }
 

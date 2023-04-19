@@ -1,6 +1,6 @@
 {
 	"name": "sveltekit-keyloak-multitenant",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Multi-tenant authentication and authorization for SvelteKit apps using KeyCloak.",
 	"private": false,
 	"author": "Mark Sawczuk",
@@ -34,6 +34,7 @@
 		"svelte": "^3.54.0"
 	},
 	"devDependencies": {
+		"@rollup/plugin-terser": "^0.4.1",
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/adapter-node": "^1.2.3",
 		"@sveltejs/kit": "^1.5.0",

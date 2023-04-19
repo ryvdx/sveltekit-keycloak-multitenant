@@ -1,20 +1,16 @@
 # sveltekit-keycloak-multitenant (BETA)
-(still troubleshooting this...)
 
-Multi-tenant (fully federated) authentication and authorization in SvelteKit apps using KeyCloak.
-Intended for apps that need fully federated authentication for typically B2B apps serving enterprise customers with varying authentication requirements.
+Multi-tenant (fully federated) authentication and authorization library for KeyCloak in SvelteKit apps.
+Enables role-based-access-controls configuration in Keycloak, and SvelteKit app role metadata access in SSR.
 Uses a Hybrid Authentication flow and JWT tokens.
-Provides enables role-based-access-controls using Keycloak role managemewnt for SvelteKit apps to leverage.
 
 # Motivation
 
-Wanted a cost effective solution for multitenant authentication in SvelteKit apps intended to run in a containerized environment.
+Needed a solution for multitenant authentication in a SvelteKit app intended to run in a containerized environment.
+Intended for apps that need fully federated authentication (i.e. enterprise B2B apps serving customers with varying authentication requirements.)
+Most auth solutions are single-tenant, including most keycloak libraries for sveltekit.
 
-Most solutions are built for single-tenancy, or quickly expanding on authentication providers and social logins. (B2C applicataions.)
-
-Keycloak is a great open source solution enabling fully federated authentication.  But, most examples online using Keycloak and Sveltekit are implemented as single-tenant.
-
-This library enables apps to use multiple keycloak realms mapping customer user email domains to realms for federated authentication services. (B2B apps)
+This library enables apps to use multiple keycloak realms mapping customer user email domains to realms.
 
 1. Each customer has fully configurable authentication per their enterprise reqiurements.
    (i.e. bring-your-own-identity-provider, 2-factor Auth for others, different authentication rules for every customer)
@@ -24,10 +20,9 @@ This library enables apps to use multiple keycloak realms mapping customer user 
 Some added benefits of this library:
 
 - Single implementation in hooks.server.ts handles all routes and general API calls from client to server transparently
-- Low-client trust: No access tokens or any sensitive paramters like keycloak client codes ever sent to browser.  Refresh token is only thing shared with client.
-- only HTTP-only strict domain cookies used.
-- CSRF concerns in authentication addressed
-- ability to retain communication between sveltekit app and keycloak within private network.  (authentication done externally, but access token exchange, token refresh, and session logout done with different URL keeping that communication within private network of your infrastructure.)
+- Low-client trust: No access tokens sent to client.  Refresh token is only thing shared with client.
+- only HTTP-only strict domain cookies used. (for CSRF)
+- ability to retain communication between sveltekit app and keycloak within private network.  (assumes keycloak and your sveltekit app containers use secure network.)
 
 # Install
 
