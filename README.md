@@ -19,29 +19,26 @@ This library enables apps to use multiple keycloak realms mapping customer user 
 
 Some added benefits of this library:
 
-- Single implementation in hooks.server.ts handles all routes and general API calls from client to server transparently
-- Low-client trust: No access tokens sent to client.  Refresh token is only thing shared with client.
-- only HTTP-only strict domain cookies used. (for CSRF)
-- ability to retain communication between sveltekit app and keycloak within private network.  (assumes keycloak and your sveltekit app containers use secure network.)
+- Single implementation in hooks.server.ts handles all routes and API calls
+- Low-client trust: HTTP-only strict domain cookies used. No access tokens shared with client.  Code exchange for access tokens, token refresh, logout kept in secure network between containers.
 
 # Install
-
 ```
-npm install -S sveltkit-keycloak-multitenant
+yarn install -S sveltkit-keycloak-multitenant
 ```
 
-# Setup Summary
-
+# SvelteKit App Summary
+See example: https://github.com/ryvdx/sveltekit-keycloak-multitenant-example  (/demoapp)
 1. Setup .ENV variables
 2. add userinfo definition in app.d.ts locals
-3. Add handler to hooks.server.ts file
+3. Add KeyCloakHandle to src/hooks.server.ts file
 4. Make a basic login form
-5. Make a Logout route with SSR
-6. Integrate the navigation and logout into layout.server.ts
-7. Setup Keycloak
-8. Update tenants.yaml with the tenants and clients setup in the last step
+5. Make a Logout route (must have +page.server file to force SSR)
+6. Integrate your navigation and logout into layout.server.ts
 
-# Setup Explained
+(Remainder can be setup outside of your app.  See docker-compose in root and Readme in example link above.)
+
+# Keycloak Library Integration Details
 
 ## 1. Setup .ENV variables[1. Setup .ENV variables]
 
@@ -77,21 +74,34 @@ export {};
 
 ```
 import type { Handle } from "@sveltejs/kit";
-import { KeyCloakHandle } from "$lib/server/keycloakservice";
+import { KeyCloakHandle } from "sveltekit-keyloak-multitenant";
+import { env } from "$env/dynamic/private";
 
-export const handle: Handle = KeyCloakHandle;
+export const handle: Handle = KeyCloakHandle({
+    keycloakUrl: env.KEYCLOAK_URL,
+    keycloakInternalUrl: env.KEYCLOAK_INTERNAL_URL,
+    loginPath: env.LOGIN_PATH,
+    logoutPath: env.LOGOUT_PATH,
+    postLoginPath: env.POST_LOGIN_PATH,
+  });
 ```
 
-Or, if you have multiple handle functions running in all server-side calls, you can use sequence.
+Alternatively if you have other hooks middleware functions:
 
 ```
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from "@sveltejs/kit";
-import { KeyCloakHandle } from "$lib/server/keycloakservice";
+import { KeyCloakHandle } from "sveltekit-keyloak-multitenant";
+import { env } from "$env/dynamic/private";
 
 export const handle: Handle = sequence(
-  KeyCloakHandle,
-  // Your other handle functions here...
+  KeyCloakHandle({
+    keycloakUrl: env.KEYCLOAK_URL,
+    keycloakInternalUrl: env.KEYCLOAK_INTERNAL_URL,
+    loginPath: env.LOGIN_PATH,
+    logoutPath: env.LOGOUT_PATH,
+    postLoginPath: env.POST_LOGIN_PATH,
+  }),
 );
 ```
 
@@ -101,32 +111,23 @@ Define a route that matches the ENV variable LOGIN_PATH that includes the basic 
 KeyCloakHandle will map the user to a tenant using email (domain), and redirect the user to the appropriate realm for authenication.
 Will also pass the email to the authentication for convenience so user does not have to specify that twice.
 
-Form requires:
-
+Form requirements:
 - input with type=email and name=email
-- post action="?/login"
+- post action="?/login"  (KeyCloakHandle handle will intercept, +page.server.ts not required for LOGIN_PATH)
 
 ```
-<script lang="ts"></script>
-
-<div>
-    <form method="post" action="?/login">
-        <label for="email">email</label>
-        <input type="email" name="email" />
-        <button>Sign In</button>
-    </form>
-</div>
-
-<style>
-    ... your style here ...
-<style>
-
+  <form method="post" action="?/login">
+      <label for="email">email</label>
+      <input type="email" name="email" />
+      <button>Sign In</button>
+  </form>
 ```
 
-## 5. Make a Logout route with SSR
+## 5. Make a Logout route
 
-Implement a route for whatever LOGOUT_PATH is going to be set to. When a logout button/link will be clicked, KeyCloakHandle will do a response redirect to that.
-This route must have +page.svelte and +page.server.ts file in order to force a server-side after logout. It does not matter what you want to put on the logout page beyond having those files present. This is required so that a SSR call will clear the locals, which layout.svelte then hides unauthenticated routes. It will also ensure the refresh cookie is expired on page render in the browser before they do anything else.
+Implement a route LOGOUT_PATH is going to be set to. 
+This route must have +page.svelte AND +page.server.ts (to force server-side after logout)
+No logic required in +page.server file, and customize +page.svelte for whatever logout message your want.
 
 ## 6. Integrate the navigation and logout into layout.server.ts
 
@@ -177,14 +178,17 @@ Example +layout.svelte file. (You can do anything with the UserInfo metadata ret
 </style>
 ```
 
-## 7. Setup Keycloak
+# Important:
+data-sveltekit-preload-data="off" required on logout link along with the +page.server file for the LOGOUT_PATH.
+This ensures a server side response to the logout.  This will end the user session in Keycloak, clear the locals, which then lets your Layout files update using an unauthenticated sate.  On logout, when page returns to client, it will expire the refresh cookie and any other cookies.
 
-## 8. Update tenants.yaml with the tenants and clients setup in the last step
+# Tenants.yaml file
 
-Structure your metadata as follows... the key in the first level is the assumed "tenant name".
-(Might do this different in the future an leverage a service account in the master realm to get all this,
-for now this is simple enough. Easy enough to update the dependency in a container in Kubernetes or Docker.
-login route will try to refresh pulling this so the lookupt won't get out-of-sync if the file is updated.)
+System runs using a YAML configuration file declaring tenants.  Users mapped to realms using email domains.
+If email domain / tenant mapping does not exist, it will re-read the yaml file and try again.  (Enables quick edit of the file and injected/updated on the fly.)
+Note: do not use "master" realm for customer apps per Keycloak best practices.  Create per-customer new realms.
+(For setup of KeyCloak, see https://github.com/ryvdx/sveltekit-keycloak-multitenant-example)
+
 
 ```
 mustangs:
@@ -199,7 +203,7 @@ camaros:
   email_domain: 'camaros.io'
 ```
 
-Optional: Extend this with any additional attributes to pass into locals.
+Optional: Extend this with any additional metadata to customize your per-tenant experience:
 
 ```
 mustangs:
