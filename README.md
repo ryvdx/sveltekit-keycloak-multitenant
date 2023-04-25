@@ -1,4 +1,4 @@
-# sveltekit-keycloak-multitenant (BETA)
+# sveltekit-keycloak-multitenant
 
 Multi-tenant (fully federated) authentication and authorization library for KeyCloak in SvelteKit apps.
 Enables role-based-access-controls configuration in Keycloak, and SvelteKit app role metadata access in SSR.
@@ -40,11 +40,11 @@ See example: https://github.com/ryvdx/sveltekit-keycloak-multitenant-example  (/
 
 # Keycloak Library Integration Details
 
-## 1. Setup .ENV variables[1. Setup .ENV variables]
+## 1. Setup .ENV variables
 
 | Variable              | Purpose                                                                                                  | Example (Default)     |
 | --------------------- | -------------------------------------------------------------------------------------------------------- | --------------------- |
-| KEYCLOAK_URL          | URL of your Keycloak server taking OIDC authentication calls.                                            | https://auth.mayapp   |
+| KEYCLOAK_URL          | URL of your Keycloak server taking OIDC authentication calls.                                            | https://auth.myapp   |
 | KEYCLOAK_INTERNAL_URL | Intenal URL of your Keycloak server within containerized network.                                        | http://keycloak:8085  |
 | LOGIN_PATH            | Relative path to user email form pre-login.                                                              | /auth/login           |
 | LOGOUT_PATH           | path where you want to redirect to post logout. (Route must have a server side +page.server.ts/js file)  | /auth/logout          |

@@ -240,7 +240,14 @@ const kcHandle = async ({ event, resolve }) => {
             console.debug('Redirecting to login if no csrfCode code found');
             throw redirect(303, LOGIN_PATH);
         }
-        const tenantMeta = KeyCloakHelper.getTenantByEmail(email);
+        let tenantMeta;
+        try {
+            tenantMeta = KeyCloakHelper.getTenantByEmail(email);
+        }
+        catch (err) {
+            console.error(`Tenant not found for email ${email}`);
+            throw redirect(303, LOGIN_PATH);
+        }
         const LastPath = event.cookies.get('LastPath');
         const redirectTo = `${event.url.origin}${LastPath ?? POST_LOGIN_PATH}`;
         const keycloackLoginUrl = KeyCloakHelper.getLoginForwardUrl(tenantMeta, csrfCode, redirectTo, email);
